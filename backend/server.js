@@ -12,7 +12,6 @@ console.log(`Режим работы: ${NODE_ENV}`);
 
 const app = express();
 
-// 3. НАСТРОЙКА КОНФИГУРАЦИИ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ
 const PORT = process.env.PORT
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -46,7 +45,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// ФУНКЦИЯ ДЛЯ ГЕНЕРАЦИИ ТОКЕНОВ
+
 function generateTokens(payload) {
   // Access Token - живет 15 минут, для доступа к API
   const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
@@ -85,9 +84,9 @@ app.post('/api/auth/login', async (req, res) => {
     const { accessToken, refreshToken } = generateTokens(payload);
     console.log(`accessToken: ${accessToken}, refreshToken: ${refreshToken}`)
 
-    console.log('✅ Успешная аутентификация для:', user.email);
+    console.log('Успешная аутентификация для:', user.email);
 
-    // 7.5. Устанавливаем refreshToken в HTTP-only cookie
+    // Устанавливаем refreshToken в HTTP-only cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true, // Не доступен через JavaScript (защита от XSS)
       secure: process.env.NODE_ENV === 'production', // true в production (HTTPS only)
@@ -95,7 +94,6 @@ app.post('/api/auth/login', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 дней в миллисекундах
     });
 
-    // Отправляем успешный ответ
     res.json({
       success: true,
       accessToken, // Access token отправляем в теле ответа
@@ -109,16 +107,68 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// 8. ЭНДПОИНТ ДЛЯ ПРОВЕРКИ РАБОТЫ СЕРВЕРА
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    message: '✅ Сервер работает!', 
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
-  });
+// Защищенный эндпоинт - требует валидный Access Token
+app.get('/api/user/me', (req, res) => {
+  try {
+    console.log('📨 Получен запрос на /api/user/me');
+    
+    // Проверяем наличие заголовка Authorization
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      console.log('Отсутствует заголовок Authorization');
+      return res.status(401).json({ error: 'Токен отсутствует' });
+    }
+
+    //  Извлекаем токен из заголовка (формат: Bearer <token>)
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      console.log('Неверный формат заголовка Authorization');
+      return res.status(401).json({ error: 'Неверный формат токена' });
+    }
+
+    console.log('🔐 Получен токен:', token.substring(0, 20) + '...');
+
+    // 3. Проверяем и декодируем токен
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Токен верифицирован. User ID:', decoded.userId);
+
+    // 4. Ищем пользователя в базе
+    const user = users.find(u => u.id === decoded.userId);
+    if (!user) {
+      console.log('Пользователь не найден в базе');
+      return res.status(401).json({ error: 'Пользователь не найден' });
+    }
+
+    // 5. Возвращаем данные пользователя (без пароля!)
+    const userData = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      lastLogin: new Date().toISOString(),
+      isActive: true
+    };
+
+    console.log('✅ Отправляем данные пользователя:', userData.email);
+    res.json({
+      success: true,
+      user: userData
+    });
+
+  } catch (error) {
+    console.error('Ошибка в /api/user/me:', error.message);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Токен истек' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ error: 'Невалидный токен' });
+    }
+    
+    res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+  }
 });
 
-// 9. ЗАПУСК СЕРВЕРА
+// ЗАПУСК СЕРВЕРА
 app.listen(PORT, () => {
   console.log('🚀 Сервер запущен!');
   console.log(`📍 Порт: ${PORT}`);
@@ -127,5 +177,4 @@ app.listen(PORT, () => {
   console.log('────────────────────────────────────');
 });
 
-//  ЭКСПОРТ ДЛЯ ТЕСТИРОВАНИЯ
 module.exports = app;

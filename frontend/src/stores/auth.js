@@ -13,6 +13,14 @@ export const useAuthStore = defineStore('auth', () => {
     withCredentials: true // Разрешаем отправку cookies
   })
 
+  const init = () => {
+    const token = localStorage.getItem('accessToken')
+    if (token) {
+      accessToken.value = token
+      isAuthenticated.value = true
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    }
+  }
 
   const login = async (email, password) => {
     try {
@@ -32,6 +40,17 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // Метод для получения данных пользователя
+  const getUserData = async () => {
+    try {
+      const response = await api.get('/user/me')
+      return response.data
+    } catch (error) {
+      console.error('Ошибка получения данных пользователя:', error)
+      throw error
+    }
+  }
+
   // Функция выхода
   const logout = () => {
     user.value = null
@@ -40,11 +59,13 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('accessToken')
   }
 
-  // Возвращаем всё что нужно использовать в компонентах
   return {
+    api,
+    init,
     user,
     accessToken, 
     isAuthenticated,
+    getUserData,
     login,
     logout
   }
