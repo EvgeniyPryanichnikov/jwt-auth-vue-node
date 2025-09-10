@@ -4,26 +4,19 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
-require('dotenv').config(); // ЗАГРУЖАЕМ ПЕРЕМЕННЫЕ ИЗ .ENV :cite[1]:cite[9]
+require('dotenv').config();
 
-// Проверяем, что JWT_SECRET установлен
-if (!process.env.JWT_SECRET) {
-  console.error('ОШИБКА: Переменная окружения JWT_SECRET не установлена!');
-  process.exit(1); // Завершаем процесс с ошибкой
-}
 
-// Проверяем, что NODE_ENV установлен
 const NODE_ENV = process.env.NODE_ENV || 'development';
 console.log(`Режим работы: ${NODE_ENV}`);
 
-// 2. СОЗДАЕМ EXPRESS-APP
 const app = express();
 
 // 3. НАСТРОЙКА КОНФИГУРАЦИИ ИЗ ПЕРЕМЕННЫХ ОКРУЖЕНИЯ
-const PORT = process.env.PORT || 3001; // Используем порт из .env, либо 3001 по умолчанию :cite[2]
-const JWT_SECRET = process.env.JWT_SECRET; // Секрет теперь берется из .env
+const PORT = process.env.PORT
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// 4. ПОДГОТОВКА ТЕСТОВЫХ ДАННЫХ (как и раньше)
+
 const users = [
   {
     id: 1,
@@ -47,6 +40,8 @@ function generateTokens(payload) {
   
   // Refresh Token - живет 7 дней, для обновления access token
   const refreshToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+
+  console.log(`accessToken: ${accessToken}, refreshToken: ${refreshToken}`)
   
   return { accessToken, refreshToken };
 }
