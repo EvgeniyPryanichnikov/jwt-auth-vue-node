@@ -7,7 +7,7 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref(null)
   const isAuthenticated = ref(false)
 
-  // Настраиваем axios для API запросов
+  // Настраиваю axios для API запросов
   const api = axios.create({
     baseURL: 'http://localhost:3001/api', // Адрес бэкенда
     withCredentials: true // Разрешаем отправку cookies
@@ -18,12 +18,12 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await api.post('/auth/login', { email, password })
       
-      // Сохраняем данные
+      // Сохраняю данные
       accessToken.value = response.data.accessToken
       user.value = response.data.user
       isAuthenticated.value = true
       
-      // Сохраняем токен в localStorage
+      // Сохраняю токен в localStorage
       localStorage.setItem('accessToken', accessToken.value)
       
       return response.data

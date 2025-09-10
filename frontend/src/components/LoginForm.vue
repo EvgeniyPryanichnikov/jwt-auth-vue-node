@@ -59,30 +59,24 @@
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 
-// Реактивные переменные
 const email = ref('user@mail.com')
-const password = ref('password123')
+const password = ref('')
 const loading = ref(false)
 const error = ref('')
 
-// Получаем хранилище аутентификации
 const authStore = useAuthStore()
 
-// Функция обработки логина
 const handleLogin = async () => {
   try {
     loading.value = true
     error.value = ''
     
-    // Вызываем функцию логина из хранилища
     await authStore.login(email.value, password.value)
     
-    console.log('✅ Успешный вход!')
-    // Здесь позже добавим перенаправление на главную страницу
-    
+    console.log('Успешный вход!') 
   } catch (err) {
     error.value = err.message
-    console.error('❌ Ошибка при входе:', err)
+    console.error('Ошибка при входе:', err)
   } finally {
     loading.value = false
   }

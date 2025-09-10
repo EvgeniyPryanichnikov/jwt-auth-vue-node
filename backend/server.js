@@ -21,7 +21,20 @@ const users = [
   {
     id: 1,
     email: 'user@mail.com',
-    password: '$2b$10$ijYH2HwspHMofKbtO9WtlOWMyizVFP4/OSy3oFLWKeRQyz0GYgqqO'
+    password: '$2b$10$pLqI/c71c67ZiHrHwkXER..ErfycGyqAZwNdZ1Kz.Doqtwf/lE2pS', // jwtToken818
+    role: 'user'
+  },
+  {
+    id: 2,
+    email: 'admin@mail.com',
+    password: '$2b$10$MfeYMkD1O46Mm87JApTeeeb7aBuigoodhJUOnJZXG5qZKFRkrPXKu', // Vuetify403!
+    role: 'admin'
+  },
+  {
+    id: 3,
+    email: 'moderator@mail.com',
+    password: '$2b$10$P5LADrtCdtDLxnaZ7/96MeQkhEOhUH7EVaq7pSHOexMrIdemsFa5W', // NodeJS9999
+    role: 'moderator'
   }
 ];
 
@@ -40,8 +53,6 @@ function generateTokens(payload) {
   
   // Refresh Token - живет 7 дней, для обновления access token
   const refreshToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
-
-  console.log(`accessToken: ${accessToken}, refreshToken: ${refreshToken}`)
   
   return { accessToken, refreshToken };
 }
@@ -51,27 +62,28 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     console.log('🔐 Получен запрос на логин');
     
-    // 7.1. Получаем данные из запроса
+    // Получаем данные из запроса
     const { email, password } = req.body;
 
-    // 7.2. Ищем пользователя в базе
+    // Ищем пользователя в базе
     const user = users.find(u => u.email === email);
     if (!user) {
-      console.log('❌ Пользователь не найден:', email);
+      console.log('Пользователь не найден:', email);
       return res.status(401).json({ error: 'Пользователь не найден' });
     }
 
-    // 7.3. ПРАВИЛЬНАЯ проверка пароля!
+    // проверка пароля
     // bcrypt.compare сравнивает введенный пароль с хешем из базы
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      console.log('❌ Неверный пароль для пользователя:', email);
+      console.log('Неверный пароль для пользователя:', email);
       return res.status(401).json({ error: 'Неверный пароль' });
     }
 
-    // 7.4. Генерируем JWT токены
+    // Генерируем JWT токены !!!
     const payload = { userId: user.id, email: user.email };
     const { accessToken, refreshToken } = generateTokens(payload);
+    console.log(`accessToken: ${accessToken}, refreshToken: ${refreshToken}`)
 
     console.log('✅ Успешная аутентификация для:', user.email);
 
@@ -83,7 +95,7 @@ app.post('/api/auth/login', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 дней в миллисекундах
     });
 
-    // 7.6. Отправляем успешный ответ
+    // Отправляем успешный ответ
     res.json({
       success: true,
       accessToken, // Access token отправляем в теле ответа
@@ -92,7 +104,7 @@ app.post('/api/auth/login', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('💥 Ошибка при логине:', error);
+    console.error('Ошибка при логине:', error);
     res.status(500).json({ error: 'Внутренняя ошибка сервера' });
   }
 });
