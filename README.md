@@ -1,8 +1,8 @@
 Фронтенд:
-Vue 3 - современный фреймворк
-Vuetify - красивые компоненты
-Pinia - управление состоянием
-Axios - запросы к API
+Vue 3 Composition Api, 
+Vuetify, 
+Pinia, 
+Axios
 
 Бэкенд:
 Node.js + Express - серверная логика
